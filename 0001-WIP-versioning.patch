@@ -1,0 +1,337 @@
+From d55101dcdbed45605ac3b06e05634889a58136fc Mon Sep 17 00:00:00 2001
+From: Felix Abecassis <fabecassis@nvidia.com>
+Date: Wed, 7 Nov 2018 19:33:25 -0800
+Subject: [PATCH] WIP versioning
+
+---
+ Makefile                      | 252 ++++------------------------------
+ debian/changelog              |   8 +-
+ debian/control                |   2 +-
+ rpm/SPECS/nvidia-docker2.spec |   2 +-
+ 4 files changed, 39 insertions(+), 225 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 9865d4e..4ca973e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2,245 +2,53 @@
+ 
+ DOCKER ?= docker
+ 
+-VERSION := 2.0.3
++VERSION := 2.0.4
+ PKG_REV := 1
+-RUNTIME_VERSION := 2.0.0
++
++RUNTIME_VERSION := 2.1.0
++DOCKER_VERSION := 18.09.0
+ 
+ DIST_DIR  := $(CURDIR)/dist
+ 
+ .NOTPARALLEL:
+ .PHONY: all
+ 
+-all: ubuntu18.04 ubuntu16.04 ubuntu14.04 debian9 debian8 centos7 amzn2 amzn1
+-
+-ubuntu18.04: $(addsuffix -ubuntu18.04, 18.06.1 18.06.0 18.03.1 17.12.1)
+-
+-ubuntu16.04: $(addsuffix -ubuntu16.04, 18.06.1 18.06.0 18.03.1 18.03.0 17.12.1 17.12.0 17.09.1 17.09.0 17.06.2 17.03.2 1.13.1 1.12.6)
+-
+-ubuntu14.04: $(addsuffix -ubuntu14.04, 18.06.1 18.06.0 18.03.1 18.03.0 17.12.1 17.09.1 17.06.2 17.03.2)
+-
+-debian9: $(addsuffix -debian9, 18.06.1 18.06.0 18.03.1 18.03.0 17.12.1 17.12.0 17.09.1 17.09.0 17.06.2 17.03.2)
+-
+-debian8: $(addsuffix -debian8, 18.06.1 18.06.0 18.03.1 18.03.0 17.12.1 17.09.1 17.06.2)
+-
+-centos7: $(addsuffix -centos7, 18.06.1.ce 18.06.0.ce 18.03.1.ce 18.03.0.ce 17.12.1.ce 17.12.0.ce 17.09.1.ce 17.09.0.ce 17.06.2.ce 17.03.2.ce 1.13.1 1.12.6)
+-
+-amzn2: $(addsuffix -amzn2, 18.06.1.ce 18.03.1.ce 17.06.2.ce)
+-
+-amzn1: $(addsuffix -amzn1, 18.06.1.ce 18.03.1.ce 17.12.1.ce 17.09.1.ce 17.06.2.ce 17.03.2.ce)
+-
+-18.06.1-ubuntu18.04:
+-	$(DOCKER) build --build-arg VERSION_ID="18.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.1-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.1~ce~3-0~ubuntu) | docker-ee (= 18.06.1~ee~3-0~ubuntu)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.1" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:18.04-docker18.06.1" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu18.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:18.04-docker18.06.1"
+-
+-18.06.0-ubuntu18.04:
+-	$(DOCKER) build --build-arg VERSION_ID="18.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.0-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.0~ce~3-0~ubuntu) | docker-ee (= 18.06.0~ee~3-0~ubuntu)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.0" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:18.04-docker18.06.0" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu18.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:18.04-docker18.06.0"
+-
+-18.03.1-ubuntu18.04:
+-	$(DOCKER) build --build-arg VERSION_ID="18.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.03.1-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.03.1~ce~3-0~ubuntu) | docker-ee (= 18.03.1~ee~3-0~ubuntu)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.03.1" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:18.04-docker18.03.1" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu18.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:18.04-docker18.03.1"
++all: ubuntu18.04 ubuntu16.04 debian9 centos7
+ 
+-17.12.1-ubuntu18.04:
++ubuntu18.04:
+ 	$(DOCKER) build --build-arg VERSION_ID="18.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker17.12.1-1" \
+-                        --build-arg DOCKER_VERSION="docker.io (= 17.12.1-0ubuntu1)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker17.12.1" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:18.04-docker17.12.1" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu18.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:18.04-docker17.12.1"
+-
+-%-ubuntu16.04:
+-	$(DOCKER) build --build-arg VERSION_ID="16.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker$*-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= $*~ce-0~ubuntu) | docker-ee (= $*~ee-0~ubuntu)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker$*" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:16.04-docker$*" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu16.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:16.04-docker$*"
+-
+-18.06.1-ubuntu16.04:
+-	$(DOCKER) build --build-arg VERSION_ID="16.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.1-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.1~ce~3-0~ubuntu) | docker-ee (= 18.06.1~ee~3-0~ubuntu)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.1" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:16.04-docker18.06.1" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu16.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:16.04-docker18.06.1"
+-
+-18.06.0-ubuntu16.04:
+-	$(DOCKER) build --build-arg VERSION_ID="16.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.0-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.0~ce~3-0~ubuntu) | docker-ee (= 18.06.0~ee~3-0~ubuntu)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.0" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:16.04-docker18.06.0" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu16.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:16.04-docker18.06.0"
+-
+-17.03.2-ubuntu16.04:
+-	$(DOCKER) build --build-arg VERSION_ID="16.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker17.03.2-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 17.03.2~ce-0~ubuntu-xenial) | docker-ee (= 17.03.2~ee-0~ubuntu-xenial)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker17.03.2" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:16.04-docker$*" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu16.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:16.04-docker$*"
+-
+-1.13.1-ubuntu16.04:
+-	$(DOCKER) build --build-arg VERSION_ID="16.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker1.13.1-1" \
+-                        --build-arg DOCKER_VERSION="docker-engine (= 1.13.1-0~ubuntu-xenial) | docker.io (= 1.13.1-0ubuntu1~16.04.2)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker1.13.1" \
++                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)" \
++                        --build-arg DOCKER_VERSION="docker-ce-cli | docker-ee-cli" \
++                        --build-arg PKG_VERS="$(VERSION)" \
+                         --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:16.04-docker1.13.1" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu16.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:16.04-docker1.13.1"
++                        -t "nvidia/nvidia-docker2/ubuntu:18.04-$(VERSION)" -f Dockerfile.ubuntu .
++	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu18.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:18.04-$(VERSION)"
+ 
+-1.12.6-ubuntu16.04:
++ubuntu16.04:
+ 	$(DOCKER) build --build-arg VERSION_ID="16.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker1.12.6-1" \
+-                        --build-arg DOCKER_VERSION="docker-engine (= 1.12.6-0~ubuntu-xenial) | docker.io (= 1.12.6-0ubuntu1~16.04.1)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker1.12.6" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:16.04-docker1.12.6" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu16.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:16.04-docker1.12.6"
+-
+-%-ubuntu14.04:
+-	$(DOCKER) build --build-arg VERSION_ID="14.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker$*-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= $*~ce-0~ubuntu) | docker-ee (= $*~ee-0~ubuntu)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker$*" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:14.04-docker$*" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu14.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:14.04-docker$*"
+-
+-18.06.1-ubuntu14.04:
+-	$(DOCKER) build --build-arg VERSION_ID="14.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.1-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.1~ce~3-0~ubuntu) | docker-ee (= 18.06.1~ee~3-0~ubuntu)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.1" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:14.04-docker18.06.1" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu14.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:14.04-docker18.06.1"
+-
+-18.06.0-ubuntu14.04:
+-	$(DOCKER) build --build-arg VERSION_ID="14.04" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.0-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.0~ce~3-0~ubuntu) | docker-ee (= 18.06.0~ee~3-0~ubuntu)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.0" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/ubuntu:14.04-docker18.06.0" -f Dockerfile.ubuntu .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu14.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:14.04-docker18.06.0"
+-
+-%-debian9:
+-	$(DOCKER) build --build-arg VERSION_ID="9" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker$*-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= $*~ce-0~debian)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker$*" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/debian:9-docker$*" -f Dockerfile.debian .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/debian9:/dist:Z "nvidia/nvidia-docker2/debian:9-docker$*"
+-
+-18.06.1-debian9:
+-	$(DOCKER) build --build-arg VERSION_ID="9" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.1-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.1~ce~3-0~debian)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.1" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/debian:9-docker18.06.1" -f Dockerfile.debian .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/debian9:/dist:Z "nvidia/nvidia-docker2/debian:9-docker18.06.1"
+-
+-18.06.0-debian9:
+-	$(DOCKER) build --build-arg VERSION_ID="9" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.0-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.0~ce~3-0~debian)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.0" \
++                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)" \
++                        --build-arg DOCKER_VERSION="docker-ce-cli | docker-ee-cli" \
++                        --build-arg PKG_VERS="$(VERSION)" \
+                         --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/debian:9-docker18.06.0" -f Dockerfile.debian .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/debian9:/dist:Z "nvidia/nvidia-docker2/debian:9-docker18.06.0"
++                        -t "nvidia/nvidia-docker2/ubuntu:16.04-$(VERSION)" -f Dockerfile.ubuntu .
++	$(DOCKER) run --rm -v $(DIST_DIR)/ubuntu16.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:16.04-$(VERSION)"
+ 
+-17.03.2-debian9:
++debian9:
+ 	$(DOCKER) build --build-arg VERSION_ID="9" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker17.03.2-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 17.03.2~ce-0~debian-stretch)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker17.03.2" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/debian:9-docker17.03.2" -f Dockerfile.debian .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/debian9:/dist:Z "nvidia/nvidia-docker2/debian:9-docker17.03.2"
+-
+-%-debian8:
+-	$(DOCKER) build --build-arg VERSION_ID="8" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker$*-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= $*~ce-0~debian)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker$*" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/debian:8-docker$*" -f Dockerfile.debian .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/debian8:/dist:Z "nvidia/nvidia-docker2/debian:8-docker$*"
+-
+-18.06.1-debian8:
+-	$(DOCKER) build --build-arg VERSION_ID="8" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.1-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.1~ce~3-0~debian)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.1" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/debian:8-docker18.06.1" -f Dockerfile.debian .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/debian8:/dist:Z "nvidia/nvidia-docker2/debian:8-docker18.06.1"
+-
+-18.06.0-debian8:
+-	$(DOCKER) build --build-arg VERSION_ID="8" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker18.06.0-1" \
+-                        --build-arg DOCKER_VERSION="docker-ce (= 18.06.0~ce~3-0~debian)" \
+-                        --build-arg PKG_VERS="$(VERSION)+docker18.06.0" \
+-                        --build-arg PKG_REV="$(PKG_REV)" \
+-                        -t "nvidia/nvidia-docker2/debian:8-docker18.06.0" -f Dockerfile.debian .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/debian8:/dist:Z "nvidia/nvidia-docker2/debian:8-docker18.06.0"
+-
+-%.ce-centos7:
+-	$(DOCKER) build --build-arg VERSION_ID="7" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)-1.docker$*" \
+-                        --build-arg DOCKER_VERSION="docker-ce = $*.ce" \
++                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)" \
++                        --build-arg DOCKER_VERSION="docker-ce-cli" \
+                         --build-arg PKG_VERS="$(VERSION)" \
+-                        --build-arg PKG_REV="$(PKG_REV).docker$*.ce" \
+-                        -t "nvidia/nvidia-docker2/centos:7-docker$*.ce" -f Dockerfile.centos .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/centos7:/dist:Z "nvidia/nvidia-docker2/centos:7-docker$*.ce"
++                        --build-arg PKG_REV="$(PKG_REV)" \
++                        -t "nvidia/nvidia-docker2/debian:9-$(VERSION)" -f Dockerfile.debian .
++	$(DOCKER) run --rm -v $(DIST_DIR)/debian9:/dist:Z "nvidia/nvidia-docker2/debian:9-$(VERSION)"
+ 
+-%-centos7:
++centos7:
+ 	$(DOCKER) build --build-arg VERSION_ID="7" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)-1.docker$*" \
+-                        --build-arg DOCKER_VERSION="docker = 2:$*" \
++                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)" \
++                        --build-arg DOCKER_VERSION="docker-ce-cli" \
+                         --build-arg PKG_VERS="$(VERSION)" \
+-                        --build-arg PKG_REV="$(PKG_REV).docker$*" \
+-                        -t "nvidia/nvidia-docker2/centos:7-docker$*" -f Dockerfile.centos .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/centos7:/dist:Z "nvidia/nvidia-docker2/centos:7-docker$*"
++                        --build-arg PKG_REV="$(PKG_REV).ce" \
++                        -t "nvidia/nvidia-docker2/centos:7-$(VERSION).ce" -f Dockerfile.centos .
++	$(DOCKER) run --rm -v $(DIST_DIR)/centos7:/dist:Z "nvidia/nvidia-docker2/centos:7-$(VERSION).ce"
+ 
+-%.ce-amzn2:
+-	$(DOCKER) build --build-arg VERSION_ID="2" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)-1.docker$*.amzn2" \
+-                        --build-arg DOCKER_VERSION="docker = $*ce" \
+-                        --build-arg PKG_VERS="$(VERSION)" \
+-                        --build-arg PKG_REV="$(PKG_REV).docker$*.ce.amzn2" \
+-                        -t "nvidia/nvidia-docker2/amzn:2-docker$*" -f Dockerfile.amzn .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/amzn2:/dist:Z "nvidia/nvidia-docker2/amzn:2-docker$*"
+-
+-%.ce-amzn1:
+-	$(DOCKER) build --build-arg VERSION_ID="1" \
+-                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)-1.docker$*.amzn1" \
+-                        --build-arg DOCKER_VERSION="docker = $*ce" \
+-                        --build-arg PKG_VERS="$(VERSION)" \
+-                        --build-arg PKG_REV="$(PKG_REV).docker$*.ce.amzn1" \
+-                        -t "nvidia/nvidia-docker2/amzn:1-docker$*" -f Dockerfile.amzn .
+-	$(DOCKER) run --rm -v $(DIST_DIR)/amzn1:/dist:Z "nvidia/nvidia-docker2/amzn:1-docker$*"
++# FIXME: add back amzn2 and amzn1 when they are released.
+diff --git a/debian/changelog b/debian/changelog
+index 2eb906f..a466e41 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,4 +1,10 @@
+-nvidia-docker2 (2.0.3+@VERSION@) UNRELEASED; urgency=medium
++nvidia-docker2 (2.0.4) UNRELEASED; urgency=medium
++
++  * Break the dependency on Docker CE versions. runc will now be bundled with the containerd package.
++
++ -- NVIDIA CORPORATION <cudatools@nvidia.com>  Thu, 08 Nov 2018 01:21:11 +0000
++
++nvidia-docker2 (2.0.3+docker) UNRELEASED; urgency=medium
+ 
+   * 2e9f20b Improve pass-through of docker arguments
+   * 4edca2f Pave the way for a hypothetical transitional package from v1
+diff --git a/debian/control b/debian/control
+index d06d85f..84bb44a 100644
+--- a/debian/control
++++ b/debian/control
+@@ -12,7 +12,7 @@ Package: nvidia-docker2
+ Architecture: all
+ Breaks: nvidia-docker (<< 2.0.0)
+ Replaces: nvidia-docker (<< 2.0.0)
+-Depends: ${misc:Depends}, nvidia-container-runtime (= @RUNTIME_VERSION@), @DOCKER_VERSION@
++Depends: ${misc:Depends}, nvidia-container-runtime (>= @RUNTIME_VERSION@), @DOCKER_VERSION@
+ Description: nvidia-docker CLI wrapper
+  Replaces nvidia-docker with a new implementation based on
+  nvidia-container-runtime
+diff --git a/rpm/SPECS/nvidia-docker2.spec b/rpm/SPECS/nvidia-docker2.spec
+index c3553dc..c9eb510 100644
+--- a/rpm/SPECS/nvidia-docker2.spec
++++ b/rpm/SPECS/nvidia-docker2.spec
+@@ -16,7 +16,7 @@ Source1: daemon.json
+ Source2: LICENSE
+ 
+ Conflicts: nvidia-docker < 2.0.0
+-Requires: nvidia-container-runtime = %{runtime_version}
++Requires: nvidia-container-runtime >= %{runtime_version}
+ Requires: %{docker_version}
+ 
+ %description
+-- 
+2.17.1
+
